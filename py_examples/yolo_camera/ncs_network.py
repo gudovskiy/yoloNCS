@@ -76,7 +76,7 @@ class NcsNetwork:
     #    img[:,:,i] = (img[:,:,i] - self.mean[i]) * self.std[i]
     #img = resize(img/255.0,(w,h),1)
     img = img/255.0
-    #print(img.shape)
+    print(img.shape)
     #print(img[0,0,:])
     return img.astype(numpy.float16)
 
@@ -93,7 +93,7 @@ class NcsNetwork:
     #order = graph_output.argsort()
     #last = len(self.categories)-1
     #res = NcsResult();
-    print(len(results))
+    #print(len(results))
     #for i in range(0,len(results)):
     #    res = results[i]
         #res.add( self.categories[order[last-i]], ( graph_output[order[last-i]] ) )
@@ -146,7 +146,7 @@ class NcsNetwork:
     for i in range(len(boxes_filtered)):
     	if probs_filtered[i] == 0 : continue
     	for j in range(i+1,len(boxes_filtered)):
-    		if iou(boxes_filtered[i],boxes_filtered[j]) > iou_threshold :
+    		if self.iou(boxes_filtered[i],boxes_filtered[j]) > iou_threshold :
     			probs_filtered[j] = 0.0
 
     filter_iou = numpy.array(probs_filtered>0.0,dtype='bool')
@@ -160,7 +160,7 @@ class NcsNetwork:
 
     return result
 
-  def iou(box1,box2):
+  def iou(self,box1,box2):
     tb = min(box1[0]+0.5*box1[2],box2[0]+0.5*box2[2])-max(box1[0]-0.5*box1[2],box2[0]-0.5*box2[2])
     lr = min(box1[1]+0.5*box1[3],box2[1]+0.5*box2[3])-max(box1[1]-0.5*box1[3],box2[1]-0.5*box2[3])
     if tb < 0 or lr < 0 : intersection = 0
