@@ -1,4 +1,4 @@
-﻿# YOLO for Intel/Movidius Neural Compute Stick (NCS)
+﻿# YOLO multiple object detector for Intel/Movidius Neural Compute Stick (NCS)
 
 ## News
 
