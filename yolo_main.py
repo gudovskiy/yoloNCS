@@ -117,9 +117,9 @@ def show_results(img,results, img_width, img_height):
 
 
 def main(argv):
-	model_filename = '/u/home/gudovskiyd/github/caffe-yolo/prototxt/yolo_tiny_deploy.prototxt'
-	weight_filename = '/u/home/gudovskiyd/github/caffe-yolo/caffemodel/yolo_tiny.caffemodel'
-	img_filename = '/u/home/gudovskiyd/github/caffe-yolo/images/cat.jpg'
+	model_filename = ''
+	weight_filename = ''
+	img_filename = ''
 	try:
 		opts, args = getopt.getopt(argv, "hm:w:i:")
 		print opts
