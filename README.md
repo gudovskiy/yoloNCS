@@ -29,6 +29,7 @@
 
 ## Camera Input Script
 
+* To run this demo you need to have OpenCV installed with video support. For Ubuntu please follow OPTION 2 steps [here](http://milq.github.io/install-opencv-ubuntu-debian/)
 * Run "object_detection_app.py" to process a videos from your camera. For example: "python3 object_detection_app.py" to get camera detections as below:
 
 ![](/images/camera.png)
