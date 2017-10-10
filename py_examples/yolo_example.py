@@ -1,4 +1,4 @@
-#!/usr/env/python3
+#!/usr/bin/env python3
 """
 How to compile the YoloTiny graph:
 piero@piero-ubuntu:~/movidius/bin$ python3 mvNCCompile.pyc /home/piero/movidius/ncapi/networks/YoloTiny/yolo_tiny_deploy.prototxt -w /home/piero/movidius/ncapi/networks/YoloTiny/yolo_tiny.caffemodel -s 12 -o /home/piero/movidius/ncapi/networks/YoloTiny/yolo_tiny_graph
@@ -13,10 +13,11 @@ import os
 import logging
 
 import cv2
-from mvnc import mvncapi as mvnc
+from utils.ncs_device import Ncs
 import numpy as np
 from datetime import datetime
 from skimage.transform import resize
+
 
 logger = logging.getLogger(__name__)
 
@@ -151,36 +152,18 @@ def img_preprocess(img):
     This performs preprocessing on a raw RGB image to prepare it for input into the NCS.
     YOLO wants input images to have dimensions of 448x448 pixels.
     NCS wants input tensors to be an array of float16 ranging from 0-1.000
-    :param img:  A ndarray object of shape [x, y, 3] which contains RGB values (0-255)
-    :return: A resized ndarray of shape [448, 448, 3] with RGB values in range 0.0-1.0
+    :param img:  A ndarray object of shape [x, y, 3] which contains BGR values (0-255)
+    :return: A resized ndarray of shape [448, 448, 3] with RGB float16 values in range 0.0-1.0
     """
     dim = (448, 448)
-    tensor_image = resize(img.copy() / 255.0, dim, 1)
-    tensor_image = tensor_image[:, :, (2, 1, 0)]  # Does this change from RGB to BGR?
+    tensor_image = cv2.resize(src=img, dsize=dim)
+    tensor_image = cv2.cvtColor(src=tensor_image, code=cv2.COLOR_BGR2RGB)
+    tensor_image = tensor_image / 255.0
+    # tensor_image = resize(img.copy() / 255.0, dim, 1)
+    # tensor_image = tensor_image[:, :, (2, 1, 0)]  # Does this change from RGB to BGR?
     # print('NEW shape:',im.shape)
     # print(img[0,0,:],im[0,0,:])
     return tensor_image.astype(np.float16)
-
-
-def load_graph(device, graph_file, iterations=1, nonblocking=False):
-    """
-    Loads a pre-compiled NCS graph file into the device
-    :param device: Previously opened mvnc device instance.
-    :param graph_file: Filename of graph to load.
-    :param iterations: Count of iterations that should be done on the graph.
-    :param nonblocking: If False, calls to LoadTensor and GetResult will block.
-    :return: mvnc graph object if loading is successful, or None
-    """
-    logger.info('Loading Graph {} ...'.format(graph_file))
-    load_start = datetime.now()
-    with open(graph_file, mode='rb') as f:
-        graph = device.AllocateGraph(f.read())
-    logger.info('Graph options: iteration_count={} nonblocking={}'.format(iterations, nonblocking))
-    graph.SetGraphOption(mvnc.GraphOption.ITERATIONS, iterations)
-    graph.SetGraphOption(mvnc.GraphOption.DONTBLOCK, nonblocking)
-    load_duration = datetime.now() - load_start
-    logger.info('Graph loading completed after {:.3f} sec.'.format(load_duration.total_seconds()))
-    return graph
 
 
 def main(argv):
@@ -200,12 +183,6 @@ def main(argv):
         .format(__file__, app_start_time.isoformat())
     )
 
-    # Check for usb Neural Compute Stick (NCS)
-    mvnc.SetGlobalOption(mvnc.GlobalOption.LOGLEVEL, 2)  # 0=nothing, 1=errors, 2=verbose
-    devices = mvnc.EnumerateDevices()
-    if len(devices) == 0:
-        sys.exit('No Movidius NCS devices were found.')
-
     if len(argv) == 0:
         sys.exit('Usage: python3 ' + __file__ + ' <image_file>')
     img_file = argv[0]
@@ -217,50 +194,29 @@ def main(argv):
         sys.exit('Missing NETWORK_DIR env path to YOLO [Tiny|Small] graph file')
     logger.info('Using network {}'.format(net_dir))
 
-    # get handle to first NCS device
-    device = mvnc.Device(devices[0])
-    logger.info('Opening Movidius NCS device_id={}'.format(devices[0]))
-    device.OpenDevice()
-    # opt = device.GetDeviceOption(mvnc.DeviceOption.OPTIMISATIONLIST)
+    Ncs.set_log_level(2)
+    gp = os.path.join(net_dir, 'graph')
+    with Ncs(graph_path=gp) as ncs:
+        # convert RGB image data into tensor of float16
+        img = cv2.imread(img_file)
+        tensor = img_preprocess(img)
 
-    # load neural network graph into NCS
-    graph = load_graph(device, os.path.join(net_dir, 'graph'))
+        # run a single inference on the tensor
+        out, userobj = ncs.infer(tensor)
 
-    # convert RGB image data into tensor of float16
-    img = cv2.imread(img_file)
-    tensor = img_preprocess(img)
+        results = interpret_output(
+            out.astype(np.float32),
+            img.shape[1],
+            img.shape[0]
+        )  # fc27 instead of fc12 for yolo_small
 
-    # Perform the inference on NCS hardware.
-    # Input tensor data buffer which contains 16bit half-precision floats (per IEEE 754 half
-    # precision binary floating-point format: binary16). The values in the buffer are dependent on the
-    # CNN (graph).
-    start = datetime.now()
-    graph.LoadTensor(tensor, 'user object')
-    out, userobj = graph.GetResult()
-    end = datetime.now()
-    inference_time = graph.GetGraphOption(mvnc.GraphOption.TIMETAKEN)
-    logger.info('Hardware reports inference time={:.3f} ms over {} layers'.format(sum(inference_time), len(inference_time)))
-    elapsed_time = end - start
-    logger.info('Software inference time is {:.3f} ms'.format(elapsed_time.total_seconds() * 1000))
-
-    results = interpret_output(
-        out.astype(np.float32),
-        img.shape[1],
-        img.shape[0]
-    )  # fc27 instead of fc12 for yolo_small
-
-    show_results(img, results, img.shape[1], img.shape[0])
-    cv2.waitKey(10000)
-    #
-    logger.info('Deallocating graph instance')
-    graph.DeallocateGraph()
-    logger.info('Releasing Movidius NCS device')
-    device.CloseDevice()
+        show_results(img, results, img.shape[1], img.shape[0])
+        cv2.waitKey(10000)
 
     uptime = datetime.now() - app_start_time
     logger.info(
         '\n'
-        '-------------------------------------------------------------------\n'
+        '-------------------------------------------------------------------\n' 
         '   Stopped {0}\n'
         '   Uptime was {1}\n'
         '-------------------------------------------------------------------\n'
