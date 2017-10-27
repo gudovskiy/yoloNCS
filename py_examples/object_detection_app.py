@@ -140,7 +140,7 @@ if __name__ == '__main__':
     input_q = Queue(maxsize=args.queue_size)
     output_q = Queue(maxsize=args.queue_size)
     # configuration NCS
-    network_blob = '/home/demo/ncs/ncapi/networks/YoloTiny/graph'
+    network_blob = 'graph'
     mvnc.SetGlobalOption(mvnc.GlobalOption.LOGLEVEL, 2)
     devices = mvnc.EnumerateDevices()
     if len(devices) == 0:

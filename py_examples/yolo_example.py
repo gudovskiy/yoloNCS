@@ -106,17 +106,11 @@ def show_results(img, results, img_width, img_height):
 		cv2.imshow('YOLO detection',img_cp)
 		cv2.waitKey(1000)
 
-if len(sys.argv) != 3:
-	print ("YOLOv1 usage: 1/2 for Tiny/Small model and image pointer")
-	print ("YOLOv1 example: python3 yolo_example.py 1 ../images/dog.jpg")
+if len(sys.argv) != 2:
+	print ("YOLOv1 Tiny example: python3 py_examples/yolo_example.py images/dog.jpg")
 	sys.exit()
-if sys.argv[1]=='1':
-	network_blob='../networks/YoloTiny/graph'
-elif sys.argv[1]=='2':
-	network_blob='../networks/YoloSmall/graph'
-else:
-	print ("YOLOv1 usage: enter 1 for Tiny model, 2 for Small model")
-	sys.exit()
+
+network_blob='graph'
 # configuration NCS
 mvnc.SetGlobalOption(mvnc.GlobalOption.LOGLEVEL, 2)
 devices = mvnc.EnumerateDevices()
@@ -134,7 +128,7 @@ graph.SetGraphOption(mvnc.GraphOption.ITERATIONS, 1)
 iterations = graph.GetGraphOption(mvnc.GraphOption.ITERATIONS)
 # image preprocess
 dim=(448,448)
-img = cv2.imread(sys.argv[2])
+img = cv2.imread(sys.argv[1])
 im = resize(img.copy()/255.0,dim,1)
 #im = cv2.cvtColor(im, cv2.COLOR_RGB2BGR)
 im = im[:,:,(2,1,0)]
