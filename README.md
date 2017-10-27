@@ -26,7 +26,7 @@
 ## Camera Input Script
 
 * Run "object_detection_app.py" to process a videos from your camera. For example: "python3 object_detection_app.py" to get camera detections as below.
-* Modify script arguments is needed.
+* Modify script arguments if needed.
 * Press "q" to exit app.
 
 ![](/images/camera.png)
