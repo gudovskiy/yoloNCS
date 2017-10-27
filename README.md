@@ -16,18 +16,18 @@
 ## Compilation
 
 * Compile .prototxt and corresponding .caffemodel (with the same name) to get NCS graph file. For example: "mvNCCompile prototxt/yolo_tiny_deploy.prototxt -w weights/yolo_tiny_deploy.caffemodel -s 12"
+* The compiled binary file "graph" have to be in main folder.
 
 ## Single Image Script
 
-* Run "yolo_example.py" to process a single image. For example: "python3 yolo_example.py images/dog.jpg" to get detections as below.
+* Run "yolo_example.py" to process a single image. For example: "python3 py_examples/yolo_example.py images/dog.jpg" to get detections as below.
 
 ![](/images/yolo_dog.png)
 
 ## Camera Input Script
 
-* Run "object_detection_app.py" to process a videos from your camera. For example: "python3 object_detection_app.py" to get camera detections as below.
+* Run "object_detection_app.py" to process a videos from your camera. For example: "python3 py_examples/object_detection_app.py" to get camera detections as below.
 * Modify script arguments if needed.
 * Press "q" to exit app.
 
 ![](/images/camera.png)
-
