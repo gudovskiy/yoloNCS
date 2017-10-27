@@ -141,14 +141,14 @@ if __name__ == '__main__':
     output_q = Queue(maxsize=args.queue_size)
     # configuration NCS
     network_blob = 'graph'
-    mvnc.SetGlobalOption(mvnc.GlobalOption.LOGLEVEL, 2)
+    mvnc.SetGlobalOption(mvnc.GlobalOption.LOG_LEVEL, 2)
     devices = mvnc.EnumerateDevices()
     if len(devices) == 0:
     	print('No devices found')
     	quit()
     device = mvnc.Device(devices[0])
     device.OpenDevice()
-    opt = device.GetDeviceOption(mvnc.DeviceOption.OPTIMISATIONLIST)
+    opt = device.GetDeviceOption(mvnc.DeviceOption.OPTIMISATION_LIST)
     # load blob
     with open(network_blob, mode='rb') as f:
     	blob = f.read()
