@@ -1,5 +1,10 @@
 # From http://www.pyimagesearch.com/2015/12/21/increasing-webcam-fps-with-python-and-opencv/
-
+"""
+Utilites for managing RTSP and webcam streams.
+NOTE that for python3, opencv must be specifically compiled with FFMPEG support in order to
+use an RTSP uri as an input stream.
+"""
+import logging
 import struct
 import six
 import collections
@@ -8,6 +13,8 @@ import datetime
 from threading import Thread
 from matplotlib import colors
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 class FPS:
     def __init__(self):
@@ -42,33 +49,48 @@ class FPS:
 
 
 class WebcamVideoStream:
-    def __init__(self, src, width, height):
-        # initialize the video camera stream and read the first frame
-        # from the stream
-        #print(src)
+
+    def __init__(self, src):
+
+        # initialize the video camera stream and read the first frame from the stream
+
+        logger.info('Opening video stream {}'.format(src))
         self.stream = cv2.VideoCapture(src)
-        self.stream.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-        self.stream.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-        (self.grabbed, self.frame) = self.stream.read()
+        if not self.stream.isOpened():
+            raise RuntimeError('Unable to open stream {}'.format(src))
+        self.grabbed, self.frame = self.stream.read()
+        width = self.stream.get(cv2.CAP_PROP_FRAME_WIDTH)
+        height = self.stream.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        logger.info('Stream width={} height={}'.format(width, height))
+        #self.stream.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        #self.stream.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
         # initialize the variable used to indicate if the thread should
         # be stopped
         self.stopped = False
+        self.thread = None
+
+    def __enter__(self):
+        return self.start()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.stop()
 
     def start(self):
         # start the thread to read frames from the video stream
-        Thread(target=self.update, args=()).start()
+        self.thread = Thread(target=self.update, args=()).start()
         return self
 
     def update(self):
+        logger.info('Starting thread')
         # keep looping infinitely until the thread is stopped
-        while True:
-            # if the thread indicator variable is set, stop the thread
-            if self.stopped:
-                return
-
+        while not self.stopped:
             # otherwise, read the next frame from the stream
             (self.grabbed, self.frame) = self.stream.read()
+
+        logger.info('Thread stopped.')
+        if self.stream:
+            self.stream.release()
 
     def read(self):
         # return the frame most recently read
@@ -76,7 +98,10 @@ class WebcamVideoStream:
 
     def stop(self):
         # indicate that the thread should be stopped
+        logger.info('Stopping thread ...')
         self.stopped = True
+        if self.thread:
+            self.thread.join()
 
 
 def standard_colors():
