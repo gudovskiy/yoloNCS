@@ -119,7 +119,7 @@ if len(devices) == 0:
 	quit()
 device = mvnc.Device(devices[0])
 device.OpenDevice()
-opt = device.GetDeviceOption(mvnc.DeviceOption.OPTIMISATION_LIST)
+# opt = device.GetDeviceOption(mvnc.DeviceOption.OPTIMISATION_LIST) # opt is not used
 # load blob
 with open(network_blob, mode='rb') as f:
 	blob = f.read()
