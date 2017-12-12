@@ -54,7 +54,7 @@ class Ncs(object):
 
     @classmethod
     def set_log_level(cls, level):
-        mvnc.SetGlobalOption(mvnc.GlobalOption.LOGLEVEL, level)  # 0=nothing, 1=errors, 2=verbose
+        mvnc.SetGlobalOption(mvnc.GlobalOption.LOG_LEVEL, level)  # 0=nothing, 1=errors, 2=verbose
 
     def load_graph(self, graph_path=None, iterations=1, nonblocking=False):
         """
@@ -70,7 +70,7 @@ class Ncs(object):
             self._graph = self._device.AllocateGraph(f.read())
         logger.info('Graph options: iteration_count={} nonblocking={}'.format(iterations, nonblocking))
         self._graph.SetGraphOption(mvnc.GraphOption.ITERATIONS, iterations)
-        self._graph.SetGraphOption(mvnc.GraphOption.DONTBLOCK, nonblocking)
+        self._graph.SetGraphOption(mvnc.GraphOption.DONT_BLOCK, nonblocking)
         load_duration = datetime.now() - load_start
         logger.info('Graph loading completed after {:.3f} sec.'.format(load_duration.total_seconds()))
 
@@ -83,7 +83,7 @@ class Ncs(object):
         self._graph.LoadTensor(tensor, user_ctx)
         out, userobj = self._graph.GetResult()
         end = datetime.now()
-        inference_time = self._graph.GetGraphOption(mvnc.GraphOption.TIMETAKEN)
+        inference_time = self._graph.GetGraphOption(mvnc.GraphOption.TIME_TAKEN)
         logger.info(
             'NCS reports inference time={:.3f} ms over {} layers'.format(sum(inference_time), len(inference_time)))
         elapsed_time = end - start
